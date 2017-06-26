@@ -1,0 +1,5 @@
+name: PrivateProperty
+version: alpha-1.1
+author: Piotr Kłopotowski
+main: pl.mccode.privateproperty.Main
+website: mccode.pl
