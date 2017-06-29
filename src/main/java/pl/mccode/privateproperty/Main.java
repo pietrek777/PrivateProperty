@@ -6,6 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import pl.mccode.privateproperty.config.ConfigProvider;
 import pl.mccode.privateproperty.event.EventListener;
 import pl.mccode.privateproperty.protect.ProtectedResource;
+import pl.mccode.privateproperty.protect.Protection;
 
 import java.util.logging.Logger;
 
@@ -34,8 +35,9 @@ public class Main extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new EventListener(), this);
 		logger.info(RAW_PLUGIN_PREFIX + "Plugin has been enabled");
 		instance = this;
-		createConfigFiles();
 		ConfigurationSerialization.registerClass(ProtectedResource.class);
+		createConfigFiles();
+		Protection.loadProtectedResources();
 	}
 	@Override
 	public void onDisable() {

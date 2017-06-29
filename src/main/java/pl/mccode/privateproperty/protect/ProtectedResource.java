@@ -1,105 +1,157 @@
 package pl.mccode.privateproperty.protect;
 
-import org.bukkit.Location;
+import org.bukkit.*;
+import org.bukkit.block.Biome;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.*;
+import org.bukkit.generator.BlockPopulator;
+import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.util.Consumer;
+import org.bukkit.util.Vector;
+import pl.mccode.privateproperty.Main;
+import pl.mccode.privateproperty.util.LocationUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.io.File;
+import java.util.*;
 
 public class ProtectedResource implements ConfigurationSerializable{
+	
+	//constants
+	private static final String BLOCK_LOCATION_KEY = "block-loc";
+	private static final String SIGN_LOCATION_KEY = "sign-loc";
+	private static final String OWNER_UUID_KEY = "uuid";
+	private static final String RESOURCE_TYPE_KEY = "type";
 
-	private Location blockLocation;
-	private Location signLocation;
+	public static final String SINGLE = "single";
+	public static final String DOUBLE_CHEST = "double_chest";
+	public static final String DOOR = "door";
 
-	private UUID ownerUUID;
-	private boolean single;
 
-	public Location getBlockLocation() {
+	//fields
+	private String blockLocation;
+	private String signLocation;
+
+	private String ownerUUID;
+	private String resourceType;
+
+
+	//getters and setters
+	public String getBlockLocation() {
 		return blockLocation;
 	}
 
-	public ProtectedResource setBlockLocation(Location blockLocation) {
+	public ProtectedResource setBlockLocation(String blockLocation) {
 		this.blockLocation = blockLocation;
 		return this;
 	}
+	public ProtectedResource setBlockLocation(Location blockLocation) {
+		this.blockLocation = LocationUtils.stringFromLocation(blockLocation);
+		return this;
+	}
 
-	public Location getSignLocation() {
+	public String getSignLocation() {
 		return signLocation;
 	}
 
-	public ProtectedResource setSignLocation(Location signLocation) {
+	public ProtectedResource setSignLocation(String signLocation) {
 		this.signLocation = signLocation;
 		return this;
 	}
+	public ProtectedResource setSignLocation(Location signLocation) {
+		this.signLocation = LocationUtils.stringFromLocation(signLocation);
+		return this;
+	}
 
-	public UUID getOwnerUUID() {
+	public String getOwnerUUID() {
 		return ownerUUID;
 	}
 
-	public ProtectedResource setOwnerUUID(UUID ownerUUID) {
+	public ProtectedResource setOwnerUUID(String ownerUUID) {
 		this.ownerUUID = ownerUUID;
 		return this;
 	}
 
-	public boolean isSingle() {
-		return single;
+	public String getResourceType() {
+		return resourceType;
 	}
 
-	public ProtectedResource setSingle(boolean single) {
-		this.single = single;
+	public ProtectedResource setResourceType(String resourceType) {
+		this.resourceType = resourceType;
 		return this;
 	}
 
-	public ProtectedResource(Location blockLocation, Location signLocation, UUID ownerUUID, boolean single) {
+	//serialization
+	@Override
+	public Map<String, Object> serialize() {
+		Map<String, Object> map = new HashMap<>();
+		map.put(BLOCK_LOCATION_KEY, blockLocation);
+		map.put(SIGN_LOCATION_KEY, signLocation);
+		map.put(OWNER_UUID_KEY, ownerUUID);
+		map.put(RESOURCE_TYPE_KEY, resourceType);
+		return map;
+	}
+
+	//constructors
+	public ProtectedResource(Map<String, Object> map){
+		this.setBlockLocation((String) map.get(BLOCK_LOCATION_KEY))
+				.setSignLocation((String) map.get(SIGN_LOCATION_KEY))
+				.setOwnerUUID((String) map.get(OWNER_UUID_KEY))
+				.setResourceType((String) map.get(RESOURCE_TYPE_KEY));
+	}
+
+	public ProtectedResource(String blockLocation, String signLocation, String ownerUUID, String resourceType) {
 		this.blockLocation = blockLocation;
 		this.signLocation = signLocation;
 		this.ownerUUID = ownerUUID;
-		this.single = single;
-	}
-	public ProtectedResource() {}
-
-	public ProtectedResource(Map<String, Object> map){
-		this.setBlockLocation((Location) map.get("blockLocation"))
-				.setSignLocation((Location) map.get("signLocation"))
-				.setOwnerUUID((UUID) map.get("ownerUUID"))
-				.setSingle((boolean) map.get("single"));
+		this.resourceType = resourceType;
 	}
 
+	public ProtectedResource(Location blockLocation, Location signLocation, String ownerUUID, String resourceType) {
+		this.blockLocation = LocationUtils.stringFromLocation(blockLocation);
+		this.signLocation = LocationUtils.stringFromLocation(signLocation);
+		this.ownerUUID = ownerUUID;
+		this.resourceType = resourceType;
+	}
+
+	public ProtectedResource(Location blockLocation, Location signLocation, UUID ownerUUID, String resourceType) {
+		this.blockLocation = LocationUtils.stringFromLocation(blockLocation);
+		this.signLocation = LocationUtils.stringFromLocation(signLocation);
+		this.ownerUUID = ownerUUID.toString();
+		this.resourceType = resourceType;
+	}
+
+	public ProtectedResource(){}
+
+
+	//overridden methods
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (!(o instanceof ProtectedResource)) return false;
-		ProtectedResource that = (ProtectedResource) o;
-		return isSingle() == that.isSingle() &&
-				Objects.equals(getBlockLocation(), that.getBlockLocation()) &&
-				Objects.equals(getSignLocation(), that.getSignLocation()) &&
-				Objects.equals(getOwnerUUID(), that.getOwnerUUID());
+		ProtectedResource resource = (ProtectedResource) o;
+		return Objects.equals(getBlockLocation(), resource.getBlockLocation()) &&
+				Objects.equals(getSignLocation(), resource.getSignLocation()) &&
+				Objects.equals(getOwnerUUID(), resource.getOwnerUUID()) &&
+				Objects.equals(resourceType, resource.resourceType);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getBlockLocation(), getSignLocation(), getOwnerUUID(), isSingle());
+		return Objects.hash(getBlockLocation(), getSignLocation(), getOwnerUUID(), resourceType);
 	}
 
 	@Override
 	public String toString() {
 		return "ProtectedResource{" +
-				"blockLocation=" + blockLocation +
-				", signLocation=" + signLocation +
-				", ownerUUID=" + ownerUUID +
-				", single=" + single +
+				"blockLocation='" + blockLocation + '\'' +
+				", signLocation='" + signLocation + '\'' +
+				", ownerUUID='" + ownerUUID + '\'' +
+				", resourceType='" + resourceType + '\'' +
 				'}';
-	}
-
-	@Override
-	public Map<String, Object> serialize() {
-		Map<String, Object> map = new HashMap<>();
-		map.put("blockLocation", blockLocation);
-		map.put("signLocation", signLocation);
-		map.put("ownerUUID", ownerUUID);
-		map.put("single", single);
-		return map;
 	}
 }

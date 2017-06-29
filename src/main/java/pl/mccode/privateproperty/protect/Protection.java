@@ -14,6 +14,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.MetadataValue;
 import pl.mccode.privateproperty.Main;
 import pl.mccode.privateproperty.config.ConfigProvider;
+import pl.mccode.privateproperty.util.LocationUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,16 +63,16 @@ public class Protection {
 				if(blockBehind.getMetadata(OWNER_UUID_META_KEY).size() == 0){
 					ProtectedResource protectedResource = new ProtectedResource();
 					if(blockBehind.getState() instanceof Door){
-						protectedResource.setSingle(false);
+						protectedResource.setResourceType(ProtectedResource.DOOR);
 					}
 					else if(blockBehind.getState() instanceof Chest){
 						Chest chest = (Chest) blockBehind.getState();
 						if(chest.getInventory().getHolder() instanceof DoubleChest){
-							protectedResource.setSingle(false);
-						} else protectedResource.setSingle(true);
+							protectedResource.setResourceType(ProtectedResource.DOUBLE_CHEST);
+						} else protectedResource.setResourceType(ProtectedResource.SINGLE);
 					}
 					else{
-						protectedResource.setSingle(true);
+						protectedResource.setResourceType(ProtectedResource.SINGLE);
 					}
 
 					event.setLine(0, PRIVATE_SIGN_TEXT);
@@ -80,7 +81,7 @@ public class Protection {
 					protectedResource
 							.setBlockLocation(blockBehind.getLocation())
 							.setSignLocation(blockPlaced.getLocation())
-							.setOwnerUUID(player.getUniqueId());
+							.setOwnerUUID(player.getUniqueId().toString());
 
 					initializeProtection(protectedResource);
 
@@ -89,7 +90,7 @@ public class Protection {
 
 					try{
 
-						List<ProtectedResource> list = (ArrayList<ProtectedResource>) protectedConfig.getList(ConfigProvider.PROTECTED_BLOCKS_KEY);
+						@SuppressWarnings("unchecked") List<ProtectedResource> list = (ArrayList<ProtectedResource>) protectedConfig.getList(ConfigProvider.PROTECTED_BLOCKS_KEY);
 						list.add(protectedResource);
 						protectedConfig.set(ConfigProvider.PROTECTED_BLOCKS_KEY, list);
 						ConfigProvider.getInstance().saveProtectedConfig();
@@ -155,51 +156,66 @@ public class Protection {
 		return Stream.of(PROTECTABLE).anyMatch(x -> x == block.getType());
 	}
 
-	private static String createStringCords(Location location){
-		return location.getBlockX() + " " + location.getBlockY() + " " + location.getBlockZ();
-	}
+	private static void initializeProtection(ProtectedResource protectedResource){
+		Block block = LocationUtils.LocationFromString(protectedResource.getBlockLocation()).getBlock();
+		Block sign = LocationUtils.LocationFromString(protectedResource.getSignLocation()).getBlock();
 
-	public static void initializeProtection(ProtectedResource protectedResource){
-		Block block = protectedResource.getBlockLocation().getBlock();
-		Block sign = protectedResource.getSignLocation().getBlock();
-
-		UUID uuid = protectedResource.getOwnerUUID();
+		UUID uuid = UUID.fromString(protectedResource.getOwnerUUID());
 
 		saveUUIDToMetadata(sign, uuid);
-		if(protectedResource.isSingle()){
-			saveUUIDToMetadata(block, uuid);
-		}
-		else {
-			BlockState state = block.getState();
-			if(state instanceof Chest){
-				Chest chest = (Chest) state;
-				if(chest.getInventory().getHolder() instanceof DoubleChest){
-					DoubleChest doubleChest = (DoubleChest) chest.getInventory().getHolder();
-					Block leftChest = ((Chest) doubleChest.getLeftSide()).getBlock();
-					Block rightChest = ((Chest) doubleChest.getRightSide()).getBlock();
+		String resourceType = protectedResource.getResourceType();
+		switch (resourceType) {
+			case ProtectedResource.SINGLE:
+				saveUUIDToMetadata(block, uuid);
+				break;
+			case ProtectedResource.DOUBLE_CHEST:
+				Chest chest = (Chest) block.getState();
+				DoubleChest doubleChest = (DoubleChest) chest.getInventory().getHolder();
 
-					saveUUIDToMetadata(leftChest, uuid);
-					saveUUIDToMetadata(rightChest, uuid);
-				}
-			}
-			else if(state instanceof Door){
-				Door door = (Door) state;
+				Block leftChest = ((Chest) doubleChest.getLeftSide()).getBlock();
+				Block rightChest = ((Chest) doubleChest.getRightSide()).getBlock();
+
+				saveUUIDToMetadata(leftChest, uuid);
+				saveUUIDToMetadata(rightChest, uuid);
+				break;
+			case ProtectedResource.DOOR:
+
+				//TODO Make this code working
+				Door door = (Door) block.getState();
 				Block doorTop, doorBottom;
-				if(door.isTopHalf()){
+				if (door.isTopHalf()) {
 					doorTop = block;
 					doorBottom = block.getRelative(BlockFace.DOWN);
 				} else {
 					doorTop = block.getRelative(BlockFace.UP);
 					doorBottom = block;
 				}
+
 				saveUUIDToMetadata(doorTop, uuid);
 				saveUUIDToMetadata(doorBottom, uuid);
-			}
+				break;
+		}
+	}
+	public static void loadProtectedResources(){
+		List<ProtectedResource> resourcesList = ConfigProvider.getInstance().getProtectedResourcesList();
+		if(resourcesList==null){
+			Main.getInstance().printInfo("No resources to load found");
+			return;
+		}
+		int loadedSuccessfully = 0;
+
+		for (ProtectedResource aResourcesList : resourcesList) {
+			try {
+				Protection.initializeProtection(aResourcesList);
+				loadedSuccessfully++;
+			} catch(Exception ignored){}
+		}
+		if(loadedSuccessfully == resourcesList.size()){
+			Main.getInstance().printInfo("All protected resources loaded successfully");
+		} else {
+			Main.getInstance().printInfo( loadedSuccessfully + " of " + resourcesList.size() + " protected resources loaded successfully");
 		}
 
-	}
-	private static void saveUUIDToMetadata(Block block, Player player){
-		saveUUIDToMetadata(block, player.getUniqueId());
 	}
 	private static void saveUUIDToMetadata(Block block, UUID uuid){
 		block.setMetadata(OWNER_UUID_META_KEY, new FixedMetadataValue(Main.getInstance(), uuid));
