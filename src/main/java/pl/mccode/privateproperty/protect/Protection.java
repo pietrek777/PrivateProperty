@@ -1,7 +1,6 @@
 package pl.mccode.privateproperty.protect;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.*;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -124,7 +123,7 @@ public class Protection {
 			}
 		}
 	}
-	private static UUID getOwnerUUID(Block block){
+	public static UUID getOwnerUUID(Block block){
 		for (MetadataValue mv : block.getMetadata(OWNER_UUID_META_KEY)) {
 			if (mv.getOwningPlugin() == Main.getInstance()) {
 				if(mv.value() instanceof UUID) return (UUID) mv.value();

@@ -8,7 +8,6 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import pl.mccode.privateproperty.protect.Protection;
 
-
 public class EventListener implements Listener {
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -27,5 +26,4 @@ public class EventListener implements Listener {
 			Protection.checkPermissions(event);
 		}
 	}
-
 }

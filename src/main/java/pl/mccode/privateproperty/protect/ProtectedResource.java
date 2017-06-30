@@ -1,19 +1,7 @@
 package pl.mccode.privateproperty.protect;
 
 import org.bukkit.*;
-import org.bukkit.block.Biome;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.entity.*;
-import org.bukkit.generator.BlockPopulator;
-import org.bukkit.generator.ChunkGenerator;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.MaterialData;
-import org.bukkit.metadata.MetadataValue;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.util.Consumer;
-import org.bukkit.util.Vector;
-import pl.mccode.privateproperty.Main;
 import pl.mccode.privateproperty.util.LocationUtils;
 
 import java.io.File;

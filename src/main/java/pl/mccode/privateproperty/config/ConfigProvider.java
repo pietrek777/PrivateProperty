@@ -5,12 +5,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.mccode.privateproperty.Main;
 import pl.mccode.privateproperty.protect.ProtectedResource;
-import pl.mccode.privateproperty.protect.Protection;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ConfigProvider {
 	private static ConfigProvider instance = null;
@@ -66,10 +64,11 @@ public class ConfigProvider {
 			}
 		}
 		protectedFileConfiguration = YamlConfiguration.loadConfiguration(protectedConfigFile);
-		if(justCreated){
-			saveProtectedConfig();
+		if(protectedFileConfiguration.getList(PROTECTED_BLOCKS_KEY) == null){
 			protectedFileConfiguration.set(PROTECTED_BLOCKS_KEY, new ArrayList<ProtectedResource>());
+			saveProtectedConfig();
 		}
+
 	}
 	public void saveProtectedConfig(){
 		try {
@@ -83,6 +82,7 @@ public class ConfigProvider {
 		if(configuration!=null){
 			Main.getInstance().printInfo("FileConfiguration instance for protected.yml is not null");
 			List<?> list = getProtectedFileConfiguration().getList(PROTECTED_BLOCKS_KEY);
+			if(list==null) return null;
 			if(list.size() > 0){
 				List<ProtectedResource> resourcesObjects = new ArrayList<>();
 				  list.forEach(x -> resourcesObjects.add((ProtectedResource) x));
